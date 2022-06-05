@@ -1,0 +1,5 @@
+config/Pipes/cdt.toolChain.id=gcc-x86_64-/home/luis/.espressif/tools/xtensa-clang/12.0.1-d9341b81fc/xtensa-esp32-elf-clang/bin/clang
+config/Pipes/cdt.toolChain.type=org.eclipse.cdt.build.clang
+config/TP1/cdt.toolChain.id=gcc-x86_64-/home/luis/.espressif/tools/xtensa-clang/12.0.1-d9341b81fc/xtensa-esp32-elf-clang/bin/clang
+config/TP1/cdt.toolChain.type=org.eclipse.cdt.build.clang
+eclipse.preferences.version=1
