@@ -1,0 +1,50 @@
+DATA:Hoy es viernesDATA:Hola soy Luis
+
+DATA:Me llamo lui
+
+DATA:hola
+
+DATA:hola
+
+DATA:hola gio
+
+DATA:hola fran
+
+DATA:hola
+
+DATA:soy luis
+
+DATA:hola como estas
+
+DATA:Hola estoy en san antonio
+
+DATA:Hola Fran
+
+DATA:Hola Fran
+
+DATA:Hola Gio
+
+DATA:hola luis
+
+DATA:Hola 
+
+DATA:Hola
+
+DATA:soy luis
+
+DATA:quiero que ande
+
+DATA:hola quiero irme
+
+DATA:hola soy yo
+
+DATA:hola anda?
+
+DATA:hola 
+
+DATA:hola
+
+DATA:hola soy luis
+
+DATA:hola
+

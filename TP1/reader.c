@@ -87,37 +87,45 @@ int main(void)
         {
             perror("read");
         }
-       
+
         else
-        {   
+        {
             inputBuffer[bytesRead] = '\0';
             printf("reader: read %d bytes: \"%s\"\n", bytesRead, inputBuffer);
             if (buscar_DATA(inputBuffer) == 1)
             {
-                if ((fd_log = fopen(LOG_NAME, "w")) < 0)
+                if ((fd_log = fopen(LOG_NAME, "a")) < 0)
                 {
-	        exit(1);
+                    exit(1);
                 }
                 for (size_t i = 0; i < bytesRead; i++)
-                    {fprintf(fd_log, "%c", inputBuffer[i]);}
+                {
+                    fprintf(fd_log, "%c", inputBuffer[i]);
+                }
                 fclose(fd_log);
             }
-            else {printf("DATA no encontrado\n\r");}
-            if (buscar_SIGN(inputBuffer) == 1)
+            else
             {
-                if ((fd_sign = fopen(SIGN_NAME, "w")) < 0)
+                printf("DATA no encontrado\n\r");
+                if (buscar_SIGN(inputBuffer) == 1)
                 {
-	         exit(1);
+                    if ((fd_sign = fopen(SIGN_NAME, "a")) < 0)
+                    {
+                        exit(1);
+                    }
+                    for (size_t i = 0; i < bytesRead; i++)
+                    {
+                        fprintf(fd_sign, "%c", inputBuffer[i]);
+                    }
+                    fclose(fd_sign);
                 }
-                for (size_t i = 0; i < bytesRead; i++)
-                    {fprintf(fd_sign, "%c", inputBuffer[i]);}
-                fclose(fd_sign);
-               
+                else
+                {
+                    printf("SIGN no encontrado\n\r");
+                }
             }
-            else {printf("SIGN no encontrado\n\r");}
-        }
-     }
-        while (bytesRead > 0);
+                }
+    } while (bytesRead > 0);
 
-        return 0;
-    }
+    return 0;
+}
