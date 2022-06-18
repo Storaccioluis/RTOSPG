@@ -20,7 +20,7 @@ int32_t returnCode, fd;
 
 void recibiSignal_us_1(int sig)
 {
-    if ((bytesWrote = write(fd, sign1, strlen(sign1) + 1)) == -1)
+    if ((bytesWrote = write(fd, sign1, strlen(sign1) - 1)) == -1)
     {
         perror("write");
     }
@@ -28,7 +28,7 @@ void recibiSignal_us_1(int sig)
 
 void recibiSignal_us_2(int sig)
 {
-    if ((bytesWrote = write(fd, sign2, strlen(sign2) + 1)) == -1)
+    if ((bytesWrote = write(fd, sign2, strlen(sign2) - 1)) == -1)
     {
         perror("write");
     }

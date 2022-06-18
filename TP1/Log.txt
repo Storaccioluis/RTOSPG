@@ -48,3 +48,9 @@ DATA:hola soy luis
 
 DATA:hola
 
+DATA:hola soy luis
+
+DATA:Hola soy luis
+
+DATA:anda joya
+
