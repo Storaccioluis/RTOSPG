@@ -1,0 +1,11 @@
+################TP2################
+---------------SOPG---------------
+**** Compilar : gcc nombre.c -o nombre -pthread
+
+Bloquear señales antes de crear el Thread
+
+	pthread_sigmask(SIG_BLOCK, &set, NULL);
+	
+Desbloquear señales despues de crear el thread
+
+	pthread_sigmask(SIG_UNBLOCK, &set, NULL);

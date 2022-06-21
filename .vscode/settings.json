@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "stdlib.h": "c",
+        "serialmanager.h": "c",
+        "string.h": "c",
+        "fcntl.h": "c"
+    }
+}
