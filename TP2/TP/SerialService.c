@@ -27,7 +27,7 @@
 #include "SerialManager.h"
 #include "stdbool.h"
 #define MAX 80
-#define PORT 10000 // 10000
+#define PORT 10000
 #define SA struct sockaddr
 
 #include <sys/socket.h>
@@ -79,7 +79,7 @@ void sign_unblock(void)
  */
 void signal_handler(int sig)
 {
-    write(0, "SIGNAL RECEIVE!'\r\n", 18);
+    write(0, "SIGNAL RECEIVE!'\r\n", 17);
     pthread_cancel(thread);
     close(sockfd);
     exit(1);
