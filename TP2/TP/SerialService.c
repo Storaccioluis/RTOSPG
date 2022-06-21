@@ -38,49 +38,81 @@ char buff_send[10];
 int n;
 char serial_buff[MAX];
 int buff_size = MAX;
-int flag_send = 0;
 
+int sockfd;
+
+pthread_t thread;
 pthread_mutex_t mutexData = PTHREAD_MUTEX_INITIALIZER;
 
-void bloquearSign(void)
+/**
+ * @brief sign_block: función que bloquea las señales para evitar que en el momento que
+ * se crea el thread llegue una señal y no haya quien la atienda.
+ *
+ */
+void sign_block(void)
 {
     sigset_t set;
     int s;
     sigemptyset(&set);
-    sigaddset(&set, SIGINT | SIGUSR1);
+    sigaddset(&set, SIGINT | SIGTERM);
     pthread_sigmask(SIG_BLOCK, &set, NULL);
 }
 
-void desbloquearSign(void)
+/**
+ * @brief sign_unblock: función que desbloquea las señales para que una vez creado el thread, pueda
+ * recibir las mismas.
+ *
+ */
+void sign_unblock(void)
 {
     sigset_t set;
     int s;
     sigemptyset(&set);
-    sigaddset(&set, SIGINT | SIGUSR1);
+    sigaddset(&set, SIGINT | SIGTERM);
     pthread_sigmask(SIG_UNBLOCK, &set, NULL);
 }
 
-void sigint_handler(int sig)
+/**
+ * @brief signal_handler: función llamada al recibir una señal SIGINT o SIGTERM.
+ *
+ * @param sig: señal recibida.
+ */
+void signal_handler(int sig)
 {
-    write(0, "Ahhh! SIGINT!\n", 14);
+    write(0, "SIGNAL RECEIVE!'\r\n", 18);
+    pthread_cancel(thread);
+    close(sockfd);
     exit(1);
 }
 
+/**
+ * @brief send_to_emulator: función que envía datos al emulador del puerto serial.
+ *
+ * @param buffer: dirección del buffer a enviar.
+ * @param size: tamaño del buffer a enviar.
+ */
 void send_to_emulator(char *buffer, int size)
 {
     serial_send(buffer, size);
 }
 
+/**
+ * @brief Thread Socket: una vez creado el socket, se crea el thread para el
+ * manejo del envío de los datos del cliente al emulador con la función send_to_emulator
+ *
+ * @param arg: file descriptor del socket creado
+ * @return void*
+ */
 void *start_socket_thread(void *arg)
 {
     printf("Thread_socket..\n");
-    int *connfd = (void *)arg;
+    int *confd = (void *)arg;
     bzero(serial_buff, MAX);
     while (1)
     {
 
         bzero(buff, MAX);
-        if (read(*connfd, buff, (sizeof(buff))) != EOF)
+        if (read(*confd, buff, (sizeof(buff))) != EOF)
         {
             printf("From client: %s\t To client : ", buff);
             send_to_emulator(buff, sizeof(buff));
@@ -89,41 +121,49 @@ void *start_socket_thread(void *arg)
         }
         else
         {
-            printf("cliente desconectado\n\r");
-        }
-        if (flag_send == 1)
-        {
-            printf("Trama enviada: %s\t", buff_send);
-            // write(*connfd, buff_send, 9 - 1);
-            flag_send = 0;
-            bzero(buff_send, 10);
+            printf("Client disconnected\n\r");
         }
         sleep(1);
-
         printf("Thread_socket_run..\n");
     }
 }
 
 int main(void)
 {
-    pthread_t thread;
+
     int ret;
     int data_receive = 0;
 
-    printf("Asigno handler\n");
+    int *connfd, len;
+    struct sockaddr_in servaddr, cli;
+
+    /* signal handler create */
 
     struct sigaction sa;
-    sa.sa_handler = sigint_handler;
+    sa.sa_handler = signal_handler;
     sa.sa_flags = 0;
     sigemptyset(&sa.sa_mask);
-    if (sigaction(SIGINT | SIGUSR1, &sa, NULL) == -1)
+
+    /* sigactiont SIGINT */
+
+    if (sigaction(SIGINT, &sa, NULL) == -1)
     {
         perror("sigaction");
         exit(1);
     }
+
+    /* sigactiont SIGTERM */
+
+    if (sigaction(SIGTERM, &sa, NULL) == -1)
+    {
+        perror("sigaction");
+        exit(1);
+    }
+
+    /* Create socket */
+
     printf("Thread socket\n");
-    int sockfd, *connfd, len;
-    struct sockaddr_in servaddr, cli;
+
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == -1)
     {
@@ -134,7 +174,8 @@ int main(void)
         printf("Socket successfully created..\n");
     bzero(&servaddr, sizeof(servaddr));
 
-    // IP, PORT
+    /* Ip and port */
+
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     servaddr.sin_port = htons(PORT);
@@ -156,6 +197,8 @@ int main(void)
         printf("Server listening..\n");
     len = sizeof(cli);
 
+    /* accep socket*/
+
     *connfd = accept(sockfd, (SA *)&cli, &len);
     if (*connfd < 0)
     {
@@ -165,8 +208,13 @@ int main(void)
     else
     {
         printf("server accept the client...\n");
-        printf("Bloqueo signal\n");
-        bloquearSign();
+        if (serial_open(1, 115200) != 0)
+        {
+            printf("Error abriendo puerto serie\r\n");
+            exit(1);
+        }
+        printf("Signal lock\r\n");
+        sign_block();
         printf("Creo thread 'start_socket_thread'\n");
         ret = pthread_create(&thread,
                              NULL,
@@ -178,20 +226,15 @@ int main(void)
             perror("pthread_error");
             exit(1);
         }
-        printf("Desbloqueo signal\n");
-        desbloquearSign();
-    }
-    if (serial_open(1, 115200) != 0)
-    {
-        printf("Error abriendo puerto serie\r\n");
-        exit(1);
+        printf("Signal unlock\r\n");
+        sign_unblock();
     }
 
+    printf("receive data..\r\n");
     while (1)
     {
-        printf("receive data..\r\n");
-        data_receive = serial_receive(serial_buff, buff_size);
 
+        data_receive = serial_receive(serial_buff, buff_size);
         if (data_receive > 0)
         {
             for (int i = 0; i < data_receive; i++)
@@ -202,13 +245,13 @@ int main(void)
             printf("sizeof: %d\r\n", data_receive);
             printf("serial_buff: %s\r\n", buff_send);
             write(*connfd, buff_send, data_receive - 1);
+            bzero(buff_send, data_receive);
         }
 
         usleep(500000);
     }
-    printf("Espero.\n");
-    sleep(1);
-    printf("Fin proceso.\n");
+
+    printf("End process.\n");
     close(sockfd);
     return 0;
 }
