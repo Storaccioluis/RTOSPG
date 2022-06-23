@@ -106,7 +106,11 @@ void send_to_emulator(char *buffer, int size)
 void *start_socket_thread(void *arg)
 {
     printf("Thread_socket..\n");
+
+    bool connClient = false;
+
     clientConnected = false;
+
     bzero(serial_buff, MAX);
 
     struct sockaddr_in servaddr, cli;
@@ -160,10 +164,13 @@ void *start_socket_thread(void *arg)
         else
         {
             printf("Server accept the client...\n");
+            pthread_mutex_lock(&mutexData);
             clientConnected = true;
+            connClient = clientConnected;
+            pthread_mutex_unlock(&mutexData);
         }
 
-        while (clientConnected == true)
+        while (connClient)
         {
             if (read(connfd, buff, (sizeof(buff))) != 0)
             {
@@ -175,7 +182,10 @@ void *start_socket_thread(void *arg)
             else
             {
                 printf("Client disconnected\n\r");
+                pthread_mutex_lock(&mutexData);
                 clientConnected = false;
+                connClient = clientConnected;
+                pthread_mutex_unlock(&mutexData);
             }
             sleep(1);
         }
@@ -197,8 +207,11 @@ int main(void)
     sigemptyset(&sa.sa_mask);
     signalExit = false; // Flag para terminar thread y cerrar programa
 
-    /* sigactiont SIGINT */
     pthread_t thread;
+
+    bool connClient = false;
+
+    /* sigactiont SIGINT */
 
     if (sigaction(SIGINT, &sa, NULL) == -1)
     {
@@ -238,7 +251,10 @@ int main(void)
     printf("receive data..\r\n");
     do
     {
-        if (clientConnected)
+        pthread_mutex_lock(&mutexData);
+        connClient = clientConnected;
+        pthread_mutex_unlock(&mutexData);
+        if (connClient)
         {
             data_receive = serial_receive(serial_buff, buff_size);
             if (data_receive > 0)
@@ -264,7 +280,7 @@ int main(void)
 
     printf("End process.\n");
     pthread_cancel(thread);
-
+    pthread_join(thread,NULL);
     close(sockfd);
     return 0;
 }
